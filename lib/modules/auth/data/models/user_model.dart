@@ -20,7 +20,7 @@ class UserModel extends UserEntity {
       lastName: json['lastName'],
       gender: json['gender'],
       image: json['image'],
-      token: json['token'],
+      token: json['accessToken'],
     );
   }
 }

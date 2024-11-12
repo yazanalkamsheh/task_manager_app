@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../utils/base_pagination_bloc/pagination_state.dart';
 
 class PaginatedListView<E> extends StatefulWidget {
-  final Function(int) itemBuilder;
-  final Widget Function(BuildContext, int)? separatorBuilder;
+  final Widget Function(int index, dynamic entity) itemBuilder;
+  final Widget Function(BuildContext,int)? separatorBuilder;
   final Function() onCallMoreData;
   final Function()? onRefresh;
   final EdgeInsetsDirectional? padding;
-  final PaginationState<List<E>> state;
+  final List<E> data;
+  final bool hasReachMax;
 
   const PaginatedListView({
     super.key,
@@ -17,7 +17,8 @@ class PaginatedListView<E> extends StatefulWidget {
     required this.onCallMoreData,
     this.separatorBuilder,
     this.padding,
-    required this.state,
+    required this.data,
+    required this.hasReachMax,
   });
 
   @override
@@ -56,9 +57,9 @@ class _PaginatedListViewState extends State<PaginatedListView> {
         separatorBuilder:
         widget.separatorBuilder ?? (context, index) => const SizedBox(),
         itemCount: _calculateItemCount(),
-        itemBuilder: (context, index) {
-          if (index < widget.state.data!.length) {
-            return widget.itemBuilder(index);
+        itemBuilder: (BuildContext context,int index) {
+          if (index < widget.data.length) {
+            return widget.itemBuilder(index, widget.data[index]);
           } else {
             return _buildLoadingIndicator();
           }
@@ -68,11 +69,11 @@ class _PaginatedListViewState extends State<PaginatedListView> {
   }
 
   int _calculateItemCount() {
-    if (widget.state.hasReachMax) {
-      return widget.state.data!.length;
+    if (widget.hasReachMax) {
+      return widget.data.length;
     } else {
       // Add 1 to show loading indicator at the end
-      return widget.state.data!.length + 1;
+      return widget.data.length + 1;
     }
   }
 
@@ -85,7 +86,7 @@ class _PaginatedListViewState extends State<PaginatedListView> {
   void _scrollListener() {
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
-      if (!widget.state.hasReachMax) widget.onCallMoreData.call();
+      if (!widget.hasReachMax) widget.onCallMoreData.call();
     }
   }
 }

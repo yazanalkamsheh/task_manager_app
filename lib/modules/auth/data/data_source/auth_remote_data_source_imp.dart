@@ -16,7 +16,7 @@ class AuthRemoteDataSourceImp extends AuthDataSource {
       ApisUrls.login,
       data: parameters.toJson(),
     );
-    await CacheStorageServices().setToken(response.data['token']);
+    await CacheStorageServices().setToken(response.data['accessToken']);
     return UserModel.fromJson(response.data);
   }
 

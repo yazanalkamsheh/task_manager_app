@@ -99,7 +99,6 @@ class _UpdateTaskScreenState extends State<UpdateTaskScreen> {
                             ],
                           ),
                         ),
-
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

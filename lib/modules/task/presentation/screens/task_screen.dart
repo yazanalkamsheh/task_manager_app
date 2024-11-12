@@ -14,6 +14,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sizer/sizer.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/core_component/state_builder.dart';
 import '../../../../core/services/cache_storage_services.dart';
 import '../../../../core/services/service_locator.dart';
 import '../blocs/get_todos_bloc/get_todos_bloc.dart';
@@ -99,57 +100,46 @@ class _TasksScreenState extends State<TasksScreen> {
               _showResultForDeleteDialog(context, state.data!);
             }
           },
-          child: BlocBuilder<GetTodosBloc, PaginationState<List<TodoEntity>>>(
-            builder: (context, state) {
-              if (state.isSuccess) {
-                todoListNetwork.addAll(state.data!);
+          child: StateBuilder<GetTodosBloc, PaginationState<List<TodoEntity>>>(
+            onLoading: () => const LoadingComponent(),
+            onSuccess: (context, data, hasReachMax){
+              todoListNetwork.clear();
+              todoListNetwork.addAll(data!);
                 return PaginatedListView<TodoEntity>(
                   padding: EdgeInsetsDirectional.all(3.w),
-                  separatorBuilder: (context, index) => SizedBox(height: 4.w),
-                  itemBuilder: (index) =>
+                  separatorBuilder: (context,index) => SizedBox(height: 4.w),
+                  itemBuilder: (index, entity) =>
                       StatefulBuilder(builder: (context, setState) {
                     return TodoComponent(
-                      todoEntity: todoListNetwork[index],
+                      todoEntity: entity,
                       onPressedFavorite: () async {
-                        if (todoListNetwork[index].isFavorite) {
-                          todoListNetwork[index] = todoListNetwork[index]
-                              .copyWith(isFavorite: false);
+                        if (entity.isFavorite) {
+                          entity = entity.copyWith(isFavorite: false);
                           await CacheStorageServices()
-                              .removeTodoFromFavorites(todoListNetwork[index]);
+                              .removeTodoFromFavorites(entity);
                         } else {
-                          todoListNetwork[index] =
-                              todoListNetwork[index].copyWith(isFavorite: true);
-                          CacheStorageServices()
-                              .addToFavorites(todoListNetwork[index]);
+                          entity = entity.copyWith(isFavorite: true);
+                          CacheStorageServices().addToFavorites(entity);
                         }
                         setState(() {});
                       },
                     );
                   }),
                   onCallMoreData: () => context
-                      .read<GetTodosBloc>()
-                      .add(const LoadMoreTodosEvent()),
-                  state: state,
-                  onRefresh: () {
-                    context.read<GetTodosBloc>().add(const RefreshTodosEvent());
-                    context
-                        .read<GetTodosBloc>()
-                        .add(const FetchFirstTimeTodosEvent());
-                  },
-                );
-              }
-              if (state.isError) {
-                return FailureComponent(
-                  failure: state.failure,
-                  onTryAgain: () => context
-                      .read<GetTodosBloc>()
-                      .add(const FetchFirstTimeTodosEvent()),
-                );
-              }
-
-              return const LoadingComponent();
+                      .read<GetTodosBloc>().add(const LoadMoreTodosEvent()),
+                hasReachMax: hasReachMax,
+                data: data,
+                onRefresh: () {
+                  context.read<GetTodosBloc>().add(const RefreshTodosEvent());
+                  context.read<GetTodosBloc>().add(const FetchFirstTimeTodosEvent());
+                },
+              );
             },
+            onFailure: (context,failure) => FailureComponent(
+            failure: failure,
+            onTryAgain: () => context.read<GetTodosBloc>().add(const FetchFirstTimeTodosEvent()),
           ),
+          )
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () => context.push(AddTasksRoute.name),
